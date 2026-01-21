@@ -95,10 +95,24 @@ class AdvancedVectorEngine {
                 
                 // استخدام ديناميكي للوظيفة import() لتحميل ملفات JS
                 const module = await import(url + '?t=' + Date.now());
-                const data = module.default || module[key + 'VectorsData'];
+                
+                // 🕵️‍♂️ البحث الذكي عن البيانات داخل الملف
+                let data = module.default || module[key + 'VectorsData'];
+
+                // إذا لم نجد البيانات بالاسم المتوقع، نبحث عن أي كائن يحتوي على مصفوفة data
+                if (!data || !data.data) {
+                    const values = Object.values(module);
+                    for (const val of values) {
+                        if (val && val.data && Array.isArray(val.data)) {
+                            data = val;
+                            console.log(`💡 تم العثور على بيانات ${key} في متغير مختلف.`);
+                            break;
+                        }
+                    }
+                }
                 
                 if (!data || !data.data) {
-                    console.warn(`⚠️ بيانات ${key} غير متوفرة بالهيكل المتوقع`);
+                    console.warn(`⚠️ بيانات ${key} تم تحميلها لكن الهيكل غير صحيح (يجب أن تحتوي على .data)`);
                     continue;
                 }
                 
@@ -920,4 +934,5 @@ class ArabicEgyptianTextProcessor {
 window.vEngine = new AdvancedVectorEngine();
 
 console.log('✅ Vector Engine V4 - النظام المتقدم جاهز!');
+
 
