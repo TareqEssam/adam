@@ -518,9 +518,10 @@ class AssistantUI {
             this.addMessage('assistant', this.formatter.createErrorCard('تعذر جلب التفاصيل'), true);
         }
     }
-
+}
 // ==================== تهيئة عند التحميل ====================
 document.addEventListener('DOMContentLoaded', () => {
     window.assistantUI = new AssistantUI();
 });
+
 
