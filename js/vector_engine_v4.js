@@ -93,36 +93,71 @@ class AdvancedVectorEngine {
             try {
                 console.log(`⏳ تحميل ${key}...`);
                 
-                // استخدام ديناميكي للوظيفة import() لتحميل ملفات JS
+                // إضافة timestamp لتجنب الكاش
                 const module = await import(url + '?t=' + Date.now());
                 
-                // 🕵️‍♂️ البحث الذكي عن البيانات داخل الملف
-                let data = module.default || module[key + 'VectorsData'];
+                // 🕵️‍♂️ طباعة محتويات الملف في الكونسول لنراها (مهم جداً)
+                console.log(`📦 محتويات ملف ${key}:`, module);
 
-                // إذا لم نجد البيانات بالاسم المتوقع، نبحث عن أي كائن يحتوي على مصفوفة data
-                if (!data || !data.data) {
+                let finalDataArray = null;
+
+                // 1. المحاولة المباشرة (الاسم المتوقع)
+                if (module.default?.data) finalDataArray = module.default.data;
+                else if (module[key + 'VectorsData']?.data) finalDataArray = module[key + 'VectorsData'].data;
+
+                // 2. البحث الذكي (عن أي مصفوفة داخل أي كائن)
+                if (!finalDataArray) {
                     const values = Object.values(module);
                     for (const val of values) {
+                        // حالة أ: كائن بداخله data (مثل { data: [...] })
                         if (val && val.data && Array.isArray(val.data)) {
-                            data = val;
-                            console.log(`💡 تم العثور على بيانات ${key} في متغير مختلف.`);
+                            finalDataArray = val.data;
+                            console.log(`💡 تم العثور على البيانات داخل كائن:`, val);
                             break;
+                        }
+                        // حالة ب: المتغير هو المصفوفة نفسها (مثل export const data = [...])
+                        if (Array.isArray(val)) {
+                            // نتأكد أنها ليست مصفوفة فارغة، وأنها تشبه المتجهات
+                            if (val.length > 0 && (val[0].embeddings || val[0].id)) {
+                                finalDataArray = val;
+                                console.log(`💡 تم العثور على البيانات كمصفوفة مباشرة.`);
+                                break;
+                            }
                         }
                     }
                 }
                 
-                if (!data || !data.data) {
-                    console.warn(`⚠️ بيانات ${key} تم تحميلها لكن الهيكل غير صحيح (يجب أن تحتوي على .data)`);
+                if (!finalDataArray) {
+                    console.warn(`⚠️ فشل استخراج البيانات من ${key}. الرجاء مراجعة السطر الذي يبدأ بـ 📦 في الكونسول.`);
                     continue;
                 }
                 
-                // معالجة بيانات المتجهات المتعددة
-                this.processMultiVectorData(key, data.data);
-                console.log(`✅ ${key}: ${data.data.length} سجل (5 متجهات لكل سجل)`);
+                // معالجة البيانات
+                // نمرر المصفوفة مباشرة للدالة (قمنا بتعديل بسيط هنا لنمرر المصفوفة وليس الكائن)
+                this.vectorDB[key].vectors = [];
+                this.vectorDB[key].metadata = [];
+                
+                finalDataArray.forEach(item => {
+                    if (!item.embeddings || !item.embeddings.multilingual_minilm) return;
+                    
+                    this.vectorDB[key].vectors.push({
+                        id: item.id,
+                        embeddings: item.embeddings.multilingual_minilm.embeddings,
+                        dimension: 384
+                    });
+                    
+                    this.vectorDB[key].metadata.push({
+                        id: item.id,
+                        original_data: item.original_data,
+                        metadata: item.metadata || {},
+                        text_preview: item.original_data?.text_preview || ''
+                    });
+                });
+
+                console.log(`✅ ${key}: تم تحميل ${finalDataArray.length} سجل بنجاح.`);
                 
             } catch (error) {
                 console.error(`❌ خطأ في تحميل ${key}:`, error);
-                // تحميل نسخة احتياطية محلية إذا فشل التحميل الخارجي
                 await this.loadFallbackData(key);
             }
         }
@@ -934,5 +969,6 @@ class ArabicEgyptianTextProcessor {
 window.vEngine = new AdvancedVectorEngine();
 
 console.log('✅ Vector Engine V4 - النظام المتقدم جاهز!');
+
 
 
