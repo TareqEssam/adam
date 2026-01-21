@@ -952,18 +952,20 @@ ${metadata.text_preview || 'تفاصيل النشاط'}
     findActivityData(id, metadata) {
         if (!this.db.activities) return null;
         
-        // البحث باستخدام المعرف من المتجهات
-        let found = this.db.activities.find(a => a.value === id);
+        // 1. البحث بالمعرف
+        let found = this.db.activities.find(a => a.value == id);
         
         if (!found && metadata?.original_data?.id) {
-            found = this.db.activities.find(a => a.value === metadata.original_data.id);
+            found = this.db.activities.find(a => a.value == metadata.original_data.id);
         }
         
-        // البحث باستخدام النص
+        // 2. البحث بالنص
         if (!found && metadata?.text_preview) {
-            const searchText = metadata.text_preview.substring(0, 40);
+            // تنظيف النص واختيار كلمات مفتاحية
+            const searchText = metadata.text_preview.split(' ').slice(0, 3).join(' ');
+            
             found = this.db.activities.find(a => 
-                a.text && a.text.includes(searchText)
+                a.text && (a.text.includes(searchText) || metadata.text_preview.includes(a.text))
             );
         }
         
@@ -1424,3 +1426,4 @@ window.smartAssistant = window.finalAssistantV13; // للتوافق مع V11/V12
 
 
 console.log('✅ Smart Assistant V13 - المساعد الذكي المتطور جاهز!');
+
