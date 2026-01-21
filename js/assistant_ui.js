@@ -486,32 +486,28 @@ class AssistantUI {
         this.sendMessage(activityText);
     }
     
-    // ==================== دالة اختيار بديل محدد (لمنع التكرار) ====================
+    // ==================== دالة اختيار بديل محدد (معدلة) ====================
     async selectOption(id, type, text) {
-        // 1. عرض ما اختاره المستخدم كرسالة
-        // نقوم بتقصير النص إذا كان طويلاً جداً للعرض الجمالي
+        // تنظيف النص للعرض
         const displayText = text.length > 50 ? text.substring(0, 50) + "..." : text;
         this.addMessage('user', displayText);
         
         this.showThinking(true);
         
         try {
-            // 2. استدعاء دالة showDetails مباشرة في V13 (تجاوز البحث)
-            // هذه الدالة تجلب البيانات بناءً على الـ ID فوراً
             let response;
             if (window.finalAssistantV13) {
-                response = await window.finalAssistantV13.showDetails(id, type);
+                // 🔥 التعديل هنا: نرسل 'text' كمعامل ثالث للبحث عنه إذا فشل الـ ID
+                response = await window.finalAssistantV13.showDetails(id, type, text);
             } else {
                 response = { type: 'error', text: 'المساعد غير جاهز' };
             }
 
             this.showThinking(false);
             
-            // 3. عرض النتيجة
             const formattedHTML = this.formatter.formatResponse(response);
             this.addMessage('assistant', formattedHTML, true);
             
-            // نطق ملخص بسيط
             if (this.currentMode === 'voice') {
                 this.voice.speak("إليك التفاصيل المطلوبة");
             }
@@ -522,9 +518,9 @@ class AssistantUI {
             this.addMessage('assistant', this.formatter.createErrorCard('تعذر جلب التفاصيل'), true);
         }
     }
-}
 
 // ==================== تهيئة عند التحميل ====================
 document.addEventListener('DOMContentLoaded', () => {
     window.assistantUI = new AssistantUI();
 });
+
