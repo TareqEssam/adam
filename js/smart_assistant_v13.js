@@ -973,15 +973,31 @@ ${metadata.text_preview || 'تفاصيل النشاط'}
     findAreaData(id, metadata) {
         if (!this.db.industrial) return null;
         
-        // البحث باستخدام المعرف
-        let found = this.db.industrial.find(a => a.id === id);
+        // 1. المحاولة الأولى: البحث المطابق بالمعرف (ID)
+        let found = this.db.industrial.find(a => a.id == id); // == للمقارنة المرنة بين string/number
         
-        if (!found) {
-            // البحث باستخدام النص
-            const searchText = metadata?.text_preview || id;
-            found = this.db.industrial.find(a => 
-                a.name && a.name.includes(searchText.substring(0, 20))
-            );
+        // 2. المحاولة الثانية: البحث بالاسم القادم من البيانات الوصفية
+        if (!found && metadata?.text_preview) {
+            // تنظيف النص للبحث (إزالة الكلمات الزائدة لزيادة دقة المطابقة)
+            const searchText = metadata.text_preview
+                .split(' ')
+                .filter(w => w.length > 3) // نأخذ الكلمات المهمة فقط
+                .slice(0, 3) // نأخذ أول 3 كلمات
+                .join(' ');
+
+            if (searchText.length > 2) {
+                found = this.db.industrial.find(a => 
+                    a.name && a.name.includes(searchText)
+                );
+            }
+        }
+
+        // 3. المحاولة الثالثة: البحث العكسي (هل اسم المنطقة في القاعدة جزء من النص المختار؟)
+        if (!found && metadata?.text_preview) {
+             const fullText = metadata.text_preview;
+             found = this.db.industrial.find(a => 
+                a.name && fullText.includes(a.name)
+             );
         }
         
         return found;
@@ -1079,24 +1095,28 @@ ${metadata.text_preview || 'تفاصيل النشاط'}
     /**
      * 🔄 التوافق مع الإصدارات القديمة
      */
-    async showDetails(entityId, entityType) {
-        console.log(`🔍 عرض تفاصيل: ${entityId} (${entityType})`);
+    async showDetails(entityId, entityType, fallbackText = '') {
+        console.log(`🔍 عرض تفاصيل: ${entityId} (${entityType}) - النص: ${fallbackText}`);
         
+        // تجهيز كائنMetadata للبحث
+        const searchMeta = { text_preview: fallbackText };
+
         if (entityType === 'activity') {
-            const data = this.findActivityData(entityId, {});
+            const data = this.findActivityData(entityId, searchMeta);
             if (data) {
                 return this.provideComprehensiveActivityInfo(data, 'تفاصيل', 1, {});
             }
         }
         
-        if (entityType === 'area') {
-            const data = this.findAreaData(entityId, {});
+        // التعامل مع النوعين (area أو industrial)
+        if (entityType === 'area' || entityType === 'industrial') {
+            const data = this.findAreaData(entityId, searchMeta);
             if (data) {
                 return this.provideComprehensiveAreaInfo(data, 'تفاصيل', 1);
             }
         }
         
-        return this.createResponse('التفاصيل غير متوفرة', 'error', 0);
+        return this.createResponse('عذراً، تفاصيل هذا العنصر غير متوفرة في قاعدة البيانات النصية.', 'error', 0);
     }
     
     // توابع التوافق مع V12
@@ -1401,5 +1421,6 @@ window.assistant = {
 };
 
 window.smartAssistant = window.finalAssistantV13; // للتوافق مع V11/V12
+
 
 console.log('✅ Smart Assistant V13 - المساعد الذكي المتطور جاهز!');
