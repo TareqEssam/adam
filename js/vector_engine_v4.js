@@ -52,11 +52,12 @@ class AdvancedVectorEngine {
         
         this.isReady = false;
         
-        // روابط ملفات المتجهات الجديدة (تم التعديل للتحميل من المجلد المحلي data)
+        
+        // نستخدم .. للخروج من مجلد js ثم الدخول لمجلد data
         this.vectorURLs = {
-            activities: './data/activity_vectors.js',
-            decision104: './data/decision104_vectors.js',
-            industrial: './data/industrial_vectors.js'
+            activities: '../data/activity_vectors.js',
+            decision104: '../data/decision104_vectors.js',
+            industrial: '../data/industrial_vectors.js'
         };
         
         this.init();
@@ -917,4 +918,5 @@ class ArabicEgyptianTextProcessor {
 
 // التصدير والتهيئة
 window.vEngine = new AdvancedVectorEngine();
+
 console.log('✅ Vector Engine V4 - النظام المتقدم جاهز!');
