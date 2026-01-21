@@ -55,9 +55,9 @@ class AdvancedVectorEngine {
         
         // نستخدم .. للخروج من مجلد js ثم الدخول لمجلد data
         this.vectorURLs = {
-            activities: '../data/activity_vectors.js',
-            decision104: '../data/decision104_vectors.js',
-            industrial: '../data/industrial_vectors.js'
+            activities: 'https://tareqessam.github.io/adam/data/activity_vectors.js',
+            decision104: 'https://tareqessam.github.io/adam/data/decision104_vectors.js',
+            industrial: 'https://tareqessam.github.io/adam/data/industrial_vectors.js'
         };
         
         this.init();
@@ -920,3 +920,4 @@ class ArabicEgyptianTextProcessor {
 window.vEngine = new AdvancedVectorEngine();
 
 console.log('✅ Vector Engine V4 - النظام المتقدم جاهز!');
+
