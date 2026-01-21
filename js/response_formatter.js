@@ -123,17 +123,27 @@ class ResponseFormatter {
         return this.createCard('error', 'غير مشمول في القرار', content, 1);
     }
 
-    // ==================== [جديد] تنسيق الاستفسارات والبدائل ====================
+    // ==================== [معدل] تنسيق الاستفسارات والبدائل ====================
     formatConfirmation(response) {
         let content = `<div class="confirmation-box">`;
         content += `<p style="margin-bottom:15px;">${this.formatText(response.text)}</p>`;
         
         if (response.alternatives && response.alternatives.length > 0) {
             content += `<div class="alternatives-list">`;
+            
             response.alternatives.forEach((alt, idx) => {
-                const text = alt.displayText || alt.text;
+                // نأخذ النص للعرض
+                const text = alt.displayText || alt.text || "بديل";
+                // نأخذ الـ ID والنوع (activity أو industrial)
+                const id = alt.id; 
+                const type = alt.type || 'activity'; 
+                
+                // تنظيف النص لاستخدامه داخل دالة الجافاسكريبت
+                const safeText = text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
                 content += `
-                    <div class="alternative-item clickable" onclick="window.assistantUI.sendMessage('${text.replace(/'/g, "\\'")}')" 
+                    <div class="alternative-item clickable" 
+                         onclick="window.assistantUI.selectOption('${id}', '${type}', '${safeText}')" 
                          style="padding:10px; margin:5px 0; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; cursor:pointer;">
                         <span class="badge bg-secondary me-2">${idx + 1}</span>
                         ${text}
@@ -378,4 +388,5 @@ class ResponseFormatter {
 
 // ==================== التصدير ====================
 window.ResponseFormatter = ResponseFormatter;
+
 console.log('✅ Response Formatter V2 جاهز');
